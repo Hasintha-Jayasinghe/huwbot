@@ -10,6 +10,7 @@ import { readFromJson } from './utils/readFromJson';
 (async () => {
   const prefix = '$';
   const defaultBalance = 100;
+  const roleName = 'gamer';
 
   const users: User[] = [];
 
@@ -41,6 +42,18 @@ import { readFromJson } from './utils/readFromJson';
       !message.content.startsWith(prefix)
     )
       return;
+
+    if (message.channel.id !== '898100522526048266') {
+      const embed = new MessageEmbed();
+      embed.setTitle('Error!');
+      embed.setDescription(
+        "You're in the wrong channel!\nUse <#898100522526048266>"
+      );
+      embed.setColor('RED');
+
+      message.reply({ embeds: [embed] });
+      return;
+    }
 
     const usr = users.filter(usr => usr.id === message.author.id)[0];
 
@@ -115,10 +128,11 @@ import { readFromJson } from './utils/readFromJson';
       }
 
       return;
-    }
-
-    if (message.content.startsWith(`${prefix}register`)) {
+    } else if (message.content.startsWith(`${prefix}register`)) {
       const usersWithSameID = users.filter(usr => usr.id === message.author.id);
+      const role = message.guild.roles.cache.find(
+        role => role.name === roleName
+      );
 
       if (usersWithSameID.length > 0) {
         const embed = new MessageEmbed({
@@ -147,10 +161,14 @@ import { readFromJson } from './utils/readFromJson';
         description: `You're now registered!\nYour balance is ${defaultBalance}`,
         color: 'GREEN',
       });
+      message.author.dmChannel?.send(
+        "You're now a gamer on the server! You've been given the ROLE!"
+      );
+      message.member?.roles.add(role!);
       message.reply({ embeds: [embed] });
-    }
-
-    if (message.content.startsWith(`${prefix}bal` || `${prefix}balance`)) {
+    } else if (
+      message.content.startsWith(`${prefix}bal` || `${prefix}balance`)
+    ) {
       const embed = new MessageEmbed({
         title: 'Your balance',
         description: `Your current balance is ${usr.balance}`,
@@ -158,15 +176,34 @@ import { readFromJson } from './utils/readFromJson';
       });
 
       message.reply({ embeds: [embed] });
-    }
-
-    if (message.content.startsWith(`${prefix}help`)) {
+    } else if (message.content.startsWith(`${prefix}help`)) {
       const embed = new MessageEmbed({
         title: 'HELP',
         description:
           "$register: Get started with 100 credits (You need to run this before you're allowed to play\n$bal: Get your current balance\n$blackjack: Play some blackjack",
         color: 'YELLOW',
       });
+      message.reply({ embeds: [embed] });
+    } else if (message.content.startsWith(`${prefix}leaderboard`)) {
+      const ranked = users.sort((a, b) => b.balance - a.balance);
+
+      const rankedSending = ranked.map(
+        usr => `🟢 - ${usr.name}. Balance: ${usr.balance}`
+      );
+
+      const embed = new MessageEmbed();
+      embed.setTitle('Leaderboard');
+      embed.setDescription(
+        `This is based on balance\n${rankedSending.join('\n')}`
+      );
+      message.reply({ embeds: [embed] });
+    } else {
+      const embed = new MessageEmbed();
+      embed.setTitle('Command not found');
+      embed.setDescription(
+        "Couldn't find command!\nType $help for a list of commands"
+      );
+      embed.setColor('RED');
       message.reply({ embeds: [embed] });
     }
   });
